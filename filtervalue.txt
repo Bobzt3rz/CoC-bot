@@ -1,0 +1,10 @@
+hmin 16
+smin 136
+vmin 0
+hmax 28
+smax 149
+vmax 255
+sadd 184
+ssub 116
+vadd 137
+vsub 20
