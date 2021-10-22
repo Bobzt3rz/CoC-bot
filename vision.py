@@ -6,56 +6,6 @@ class Vision:
     #constants
     TRACKBAR_WINDOW = "Trackbars"
 
-    #properties
-    method = None
-    needle_img = None
-    needle_w = 0
-    needle_h = 0
-
-
-    def __init__(self, needle_img_path, method = cv.TM_CCOEFF_NORMED):
-        self.method = method
-        # haystack_img = cv.imread(haystack_img_path, cv.IMREAD_UNCHANGED)
-        self.needle_img = cv.imread(needle_img_path, cv.IMREAD_UNCHANGED)
-        #numpy .shape method gives back [height, width, depth]
-        # print(needle_img.shape)
-        self.needle_w = self.needle_img.shape[1]
-        self.needle_h = self.needle_img.shape[0]
-
-    def find(self, haystack_img, threshold = 0.4, max_results = 10):
-
-        result = cv.matchTemplate(haystack_img, self.needle_img, self.method)
-        # print(result)
-        # print(result.shape)
-
-        locations = np.where(result >= threshold)
-        locations = list(zip(*locations[::-1]))
-        # print(locations)
-
-        # if we found no results, return now. this reshape of the empty array allows us to 
-        # concatenate together results without causing an error
-        if not locations:
-            return np.array([], dtype=np.int32).reshape(0, 4)
-
-        #grouping rectangles
-        #create list of [x,y,w,h] rectangles
-        rectangles = []
-        for loc in locations:
-            rect = [int(loc[0]), int(loc[1]), self.needle_w, self.needle_h]
-            rectangles.append(rect)
-            rectangles.append(rect)
-    
-        rectangles, weights = cv.groupRectangles(rectangles, 1, 0.5)
-        # print(rectangles)
-
-        # for performance reasons, return a limited number of results.
-        # these aren't necessarily the best results.
-        if len(rectangles) > max_results:
-            print('Warning: too many results, raise the threshold.')
-            rectangles = rectangles[:max_results]
-
-        return rectangles
-
     def get_click_points(self, rectangles):
         #x and y center coordinates of rectangles
         points = []
