@@ -1,31 +1,74 @@
-from vision import Vision
+import threading
+import time
 import cv2 as cv
-import numpy as np
-from hsvfilter import HsvFilter
+
+class counting(threading.Thread):
+    running = True
+    count = 0
+    def __init__(self, count=0):
+        threading.Thread.__init__(self)
+        self.count = count
+
+    def stop(self):
+        self.running = False
+
+    def run(self):
+        while self.running:
+            threadLock.acquire()
+            self.count += 1
+            threadLock.release()
+            print("Counting: Count = {}".format(self.count))
+            time.sleep(1)
+    
+class process():
+    def processed(count):
+        return count*10
+    def output(count, draw4):
+        return "Count is {} and draw4 is {}".format(count, draw4)
+
+
+class draw4(threading.Thread):
+    running = True
+    tencount = 0
+    tencount4 = 0
+    def __init__(self, tencount = 0):
+        threading.Thread.__init__(self)
+        self.tencount = tencount
+    
+    def update(self, tencount):
+        threadLock.acquire()
+        self.tencount = tencount
+        threadLock.release()
+        # print("Tencount is {}".format(self.tencount))
+    
+    def stop(self):
+        self.running = False
+
+    def run(self):
+        while self.running:
+            tencount4 = self.tencount * 4
+            threadLock.acquire()
+            self.tencount4 = tencount4
+            threadLock.release()
+            print("Tencount4 is {}".format(self.tencount4))
+            time.sleep(1)
 
 
 
-img = cv.imread("testbase.jpg")
-cv.imshow('test', img)
-if cv.waitKey(0) == ord('q'):
-    cv.destroyAllWindows()
+threadLock = threading.Lock()
+countthread = counting()
+draw4thread = draw4()
 
-hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-cv.imshow('test', hsv)
-if cv.waitKey(0) == ord('q'):
-    cv.destroyAllWindows()
+countthread.start()
+draw4thread.start()
 
-def get_hsv_filter_from_controls(self):
-    # Get current positions of all trackbars
-    hsv_filter = HsvFilter()
-    hsv_filter.hMin = cv.getTrackbarPos('HMin', self.TRACKBAR_WINDOW)
-    hsv_filter.sMin = cv.getTrackbarPos('SMin', self.TRACKBAR_WINDOW)
-    hsv_filter.vMin = cv.getTrackbarPos('VMin', self.TRACKBAR_WINDOW)
-    hsv_filter.hMax = cv.getTrackbarPos('HMax', self.TRACKBAR_WINDOW)
-    hsv_filter.sMax = cv.getTrackbarPos('SMax', self.TRACKBAR_WINDOW)
-    hsv_filter.vMax = cv.getTrackbarPos('VMax', self.TRACKBAR_WINDOW)
-    hsv_filter.sAdd = cv.getTrackbarPos('SAdd', self.TRACKBAR_WINDOW)
-    hsv_filter.sSub = cv.getTrackbarPos('SSub', self.TRACKBAR_WINDOW)
-    hsv_filter.vAdd = cv.getTrackbarPos('VAdd', self.TRACKBAR_WINDOW)
-    hsv_filter.vSub = cv.getTrackbarPos('VSub', self.TRACKBAR_WINDOW)
-    return hsv_filter
+try:
+    while True:
+        processednum = process.processed(countthread.count)
+        draw4thread.update(processednum)
+        output = process.output(countthread.count, draw4thread.tencount4)
+        print(output)
+        time.sleep(1)
+except KeyboardInterrupt:
+    countthread.stop()
+    draw4thread.stop()

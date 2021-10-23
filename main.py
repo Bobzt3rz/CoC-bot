@@ -1,22 +1,23 @@
 import cv2 as cv
 import numpy as np
 import pyautogui
+import threading
 from time import time, sleep
 from windowcapture import WindowCapture
 from vision import Vision
 from hsvfilter import HsvFilter
-from threading import Thread
 from detection import Detection
 
 DEBUG = True
-
-#list window names
+# make a threadlock
+threadLock = threading.Lock()
+# list window names
 WindowCapture.list_window_names()
 # initialize the WindowCapture class
 wincap = WindowCapture("SM-G975F")
-# load the detector
-detector = Detection('elixirlvl13hsv.jpg', cv.TM_CCOEFF_NORMED, threshold = 0.4, max_results = 10)
-# load an empty Vision class
+# initialize detection class for elixir collector
+detector = Detection('hsv_image/Elixir_Collector13.png', cv.TM_CCOEFF_NORMED, threshold = 0.4, max_results = 10)
+# initialize an empty Vision class
 vision = Vision()
 
 #initialize trackbar window
@@ -38,6 +39,7 @@ def bot_actions(rectangles):
         sleep(5)
     global is_bot_in_action
     is_bot_in_action = False
+
 
 wincap.start()
 detector.start()
@@ -72,8 +74,7 @@ while(True):
 
 
     # print('FPS {}'.format(1 / (time() - loop_time)))
-    loop_time = time()
-    print(detector.stopped)
+    # loop_time = time()
 
 
     if cv.waitKey(1) == ord('q'):

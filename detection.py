@@ -1,13 +1,14 @@
 import cv2 as cv
 import numpy as np
-from threading import Thread, Lock
+import threading
 from time import time
 
 
-class Detection:
+
+class Detection(threading.Thread):
 
     # threading properties
-    stopped = True
+    running = True
     lock = None
     rectangles = []
     # properties
@@ -20,8 +21,11 @@ class Detection:
     max_results = 0
 
     def __init__(self, needle_img_path, method = cv.TM_CCOEFF_NORMED, threshold = 0.4, max_results = 10):
-        # create a thread lock object
-        self.lock = Lock()
+        #initalize thread from thread class
+        threading.Thread.__init__(self)
+        #create a lock
+        self.lock = threading.Lock()
+
         # load the needle image
         self.method = method
         # haystack_img = cv.imread(haystack_img_path, cv.IMREAD_UNCHANGED)
@@ -41,20 +45,14 @@ class Detection:
         # cv.imshow("test", screenshot)
         # if cv.waitKey(0) == ord('q'):
         #     cv.destroyAllWindows()
-        
-
-    def start(self):
-        self.stopped = False
-        t = Thread(target=self.run)
-        t.start()
 
     def stop(self):
-        self.stopped = True
+        self.running = False
 
     def run(self):
         # TODO: you can write your own time/iterations calculation to determine how fast this is
-        while not self.stopped:
-            print(time())
+        while self.running:
+            # print(time())
             if not self.screenshot is None:
                 # do object detection
                 # print(time())
@@ -67,8 +65,8 @@ class Detection:
                 # print(locations)
                 # if we found no results, return now. this reshape of the empty array allows us to 
                 # concatenate together results without causing an error
-                if not locations:
-                    return np.array([], dtype=np.int32).reshape(0, 4)
+                # if not locations:
+                #     return np.array([], dtype=np.int32).reshape(0, 4)
                 #grouping rectangles
                 #create list of [x,y,w,h] rectangles
                 rectangles = []
