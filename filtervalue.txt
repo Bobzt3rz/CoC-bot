@@ -1,3 +1,4 @@
+#lvl 13 elixir collector
 hmin 16
 smin 136
 vmin 0
@@ -8,3 +9,15 @@ sadd 184
 ssub 116
 vadd 137
 vsub 20
+
+#troop placement detector
+hmin 35
+smin 198
+vmin 186
+hmax 47
+smax 255
+vmax 255
+sadd 128
+ssub 46
+vadd 44
+vsub 0

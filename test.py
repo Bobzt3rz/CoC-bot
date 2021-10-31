@@ -1,74 +1,75 @@
-import threading
-import time
 import cv2 as cv
+import numpy as np
+import imutils
+from statistics import mean
 
-class counting(threading.Thread):
-    running = True
-    count = 0
-    def __init__(self, count=0):
-        threading.Thread.__init__(self)
-        self.count = count
+# Load image, grayscale, Gaussian blur, threshold
+image = cv.imread("hsv_image/base7.png")
+blur = cv.GaussianBlur(image, (5,5), cv.BORDER_DEFAULT)
+gray = cv.cvtColor(blur, cv.COLOR_BGR2GRAY)
+kernel = np.ones((5,5), np.uint8)
+erode = cv.erode(gray, kernel, iterations=2)
 
-    def stop(self):
-        self.running = False
+thresh = cv.threshold(erode, 100, 255, cv.THRESH_BINARY)[1]
 
-    def run(self):
-        while self.running:
-            threadLock.acquire()
-            self.count += 1
-            threadLock.release()
-            print("Counting: Count = {}".format(self.count))
-            time.sleep(1)
-    
-class process():
-    def processed(count):
-        return count*10
-    def output(count, draw4):
-        return "Count is {} and draw4 is {}".format(count, draw4)
+# Gets rid of areas that are smaller than desired
+cnts = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+cnts = imutils.grab_contours(cnts)
+cnts = sorted(cnts, key=cv.contourArea, reverse=True)
+rect_areas = []
+# this method of using boundingrect may be problematic since its detecting only rectangles
+for c in cnts:
+    (x, y, w, h) = cv.boundingRect(c)
+    rect_areas.append(w * h)
+avg_area = mean(rect_areas)
+for c in cnts:
+    (x, y, w, h) = cv.boundingRect(c)
+    cnt_area = w * h
+    if cnt_area < 4 * avg_area:
+        thresh[y:y + h, x:x + w] = 0
 
+# Find placeable edge points for each contour
+placeable_edge_cnts, h = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+approx_edge_cnts = []
 
-class draw4(threading.Thread):
-    running = True
-    tencount = 0
-    tencount4 = 0
-    def __init__(self, tencount = 0):
-        threading.Thread.__init__(self)
-        self.tencount = tencount
-    
-    def update(self, tencount):
-        threadLock.acquire()
-        self.tencount = tencount
-        threadLock.release()
-        # print("Tencount is {}".format(self.tencount))
-    
-    def stop(self):
-        self.running = False
-
-    def run(self):
-        while self.running:
-            tencount4 = self.tencount * 4
-            threadLock.acquire()
-            self.tencount4 = tencount4
-            threadLock.release()
-            print("Tencount4 is {}".format(self.tencount4))
-            time.sleep(1)
+# approximate points so there are less points for each contour
+for contours in placeable_edge_cnts:
+    epsilon = 0.00025*cv.arcLength(contours,True)
+    approx_edge_points = cv.approxPolyDP(contours,epsilon,False)
+    approx_edge_cnts.append(approx_edge_points)
+    for points in contours:
+        cv.circle(image, points[0], 1, (255, 50, 0), -1)
+        
+    for points in approx_edge_points:
+        cv.circle(image, points[0], 1, (0, 50, 255), -1)
 
 
 
-threadLock = threading.Lock()
-countthread = counting()
-draw4thread = draw4()
 
-countthread.start()
-draw4thread.start()
+# draw contours
+thresh_BGR = cv.cvtColor(thresh, cv.COLOR_GRAY2BGR)
+cv.drawContours(thresh_BGR, approx_edge_cnts, -1, (255,0,0), thickness= 2)
+# cv.drawContours(image, approx_edge_cnts, -1, (255,0,0), thickness= 2)
 
-try:
-    while True:
-        processednum = process.processed(countthread.count)
-        draw4thread.update(processednum)
-        output = process.output(countthread.count, draw4thread.tencount4)
-        print(output)
-        time.sleep(1)
-except KeyboardInterrupt:
-    countthread.stop()
-    draw4thread.stop()
+x, y, w, h = cv.boundingRect(thresh)           #  Replaced code
+                                                # 
+left = (x, np.argmax(thresh[:, x]))             # 
+right = (x+w-1, np.argmax(thresh[:, x+w-1]))    # 
+top = (np.argmax(thresh[y, :]), y)              # 
+bottom = (np.argmax(thresh[y+h-1, :]), y+h-1)   # 
+
+cv.circle(image, left, 8, (0, 50, 255), -1)
+cv.circle(image, right, 8, (0, 255, 255), -1)
+cv.circle(image, top, 8, (255, 50, 0), -1)
+cv.circle(image, bottom, 8, (255, 255, 0), -1)
+
+print('left: {}'.format(left))
+print('right: {}'.format(right))
+print('top: {}'.format(top))
+print('bottom: {}'.format(bottom))
+cv.imshow('erode', erode)
+cv.imshow('gray', gray)
+cv.imshow('thresh', thresh)
+cv.imshow('thresh bgr', thresh_BGR)
+cv.imshow('image', image)
+cv.waitKey()

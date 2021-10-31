@@ -1,15 +1,30 @@
 import cv2 as cv
+import os
 from vision import Vision
 from hsvfilter import HsvFilter
 
-pic_name = "testbase.jpg"
-
 vision = Vision()
-hsv_filter = HsvFilter(16, 136, 0, 28, 149, 255, 184, 116, 137, 20)
+hsv_filter = HsvFilter()
+#apply desired hsv values
+hsv_filter.set_troop_placement()
 
-img_path = "source_image/" + pic_name
-img = cv.imread(img_path, cv.IMREAD_UNCHANGED)
+#For singular image
+def single_image(img_path: str): 
+    img = cv.imread(img_path, cv.IMREAD_UNCHANGED)
+    out_img = vision.apply_hsv_filter(img, hsv_filter)
+    img_name = img_path.split('/')[1]
+    out_path = "hsv_image/" + img_name
+    cv.imwrite(out_path, out_img)
 
-out_img = vision.apply_hsv_filter(img, hsv_filter)
-out_path = "hsv_image/" + pic_name
-cv.imwrite(out_path, out_img)
+# For multiple images
+def multiple_image(filename: str):
+    for entry in os.scandir(filename):
+        path = entry.path.replace('\\', '/')
+        img = cv.imread(path)
+        out_img = vision.apply_hsv_filter(img, hsv_filter)
+        img_name = path.split('/')[1]
+        out_path = "hsv_image/" + img_name
+        cv.imwrite(out_path, out_img)
+
+single_image("images/base1.png")
+# multiple_image("images")

@@ -16,9 +16,11 @@ WindowCapture.list_window_names()
 # initialize the WindowCapture class
 wincap = WindowCapture("SM-G975F")
 # initialize detection class for elixir collector
-detector = Detection('hsv_image/Elixir_Collector13.png', cv.TM_CCOEFF_NORMED, threshold = 0.4, max_results = 10)
+detector = Detection('hsv_image/Elixir_Collector13.png', cv.TM_CCOEFF_NORMED, threshold = 0.5, max_results = 10)
 # initialize an empty Vision class
 vision = Vision()
+# initialize bot
+
 
 #initialize trackbar window
 vision.init_control_gui()
@@ -32,30 +34,44 @@ is_bot_in_action = False
 #run function inside another thread
 def bot_actions(rectangles):
     if len(rectangles) > 0:
-        targets = vision.get_click_points(rectangles)
+        targets = vision.get_rect_centers(rectangles)
         target = wincap.get_screen_position(targets[0])
         pyautogui.moveTo(x = target[0], y=target[1])
+        sleep(3)
         pyautogui.click()
-        sleep(5)
+        sleep(3)
     global is_bot_in_action
     is_bot_in_action = False
 
 
 wincap.start()
 detector.start()
+
 loop_time = time()
+# This loop is to resize the needle image before going into main loop
 while(True):
-    # if we don't have a screenshot yet, don't run the code below
+    # if we don't have a screenshot yet, loop infinitely
     if wincap.screenshot is None:
         continue
+    else:
+        # pre-process the image
+        processed_image = vision.apply_hsv_filter(wincap.screenshot, hsv_filter)
+        # pre-process the needle image
+        needle = cv.imread("hsv_image/Elixir_Collector13.png", cv.IMREAD_UNCHANGED)
+        processed_needle = vision.apply_hsv_filter(needle, hsv_filter)
+        scaled_needle = vision.resize_needle(processed_needle, processed_image)
+        detector.update_needle(scaled_needle)
+        break    
+
+while(True):
 
     # pre-process the image
-    processed_image = vision.apply_hsv_filter(wincap.screenshot, hsv_filter)
+    processed_image = vision.apply_hsv_filter(wincap.screenshot)
 
     # cv.imshow('Computer Vision', screenshot)
 
     #do object detection
-    detector.update(processed_image)
+    detector.update_screenshot(processed_image)
 
     
     if DEBUG:
@@ -69,12 +85,12 @@ while(True):
     #take bot actions
     # if not is_bot_in_action:
     #     is_bot_in_action = True
-    #     t = Thread(target=bot_actions, args=(detector.rectangles,))
+    #     t = threading.Thread(target=bot_actions, args=(detector.rectangles,))
     #     t.start()
 
-
-    # print('FPS {}'.format(1 / (time() - loop_time)))
-    # loop_time = time()
+    #print FPS of 1 loop of code
+    print('FPS {}'.format(1 / (time() - loop_time)))
+    loop_time = time()
 
 
     if cv.waitKey(1) == ord('q'):

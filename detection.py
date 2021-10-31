@@ -25,7 +25,6 @@ class Detection(threading.Thread):
         threading.Thread.__init__(self)
         #create a lock
         self.lock = threading.Lock()
-
         # load the needle image
         self.method = method
         # haystack_img = cv.imread(haystack_img_path, cv.IMREAD_UNCHANGED)
@@ -38,14 +37,21 @@ class Detection(threading.Thread):
         self.needle_w = self.needle_img.shape[1]
         self.needle_h = self.needle_img.shape[0]
 
-    def update(self, screenshot):
+    def update_screenshot(self, screenshot):
         self.lock.acquire()
         self.screenshot = screenshot
         self.lock.release()
         # cv.imshow("test", screenshot)
         # if cv.waitKey(0) == ord('q'):
         #     cv.destroyAllWindows()
-
+    
+    def update_needle(self, needle):
+        self.lock.acquire()
+        self.needle_img = needle
+        self.lock.release()
+        self.needle_w = self.needle_img.shape[1]
+        self.needle_h = self.needle_img.shape[0]
+        
     def stop(self):
         self.running = False
 

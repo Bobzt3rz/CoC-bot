@@ -6,7 +6,34 @@ class Vision:
     #constants
     TRACKBAR_WINDOW = "Trackbars"
 
-    def get_click_points(self, rectangles):
+    def resize_needle(self, needle_img, screenshot_img):
+        mainMax = 0
+        mainScale = 1
+        #load screenshot image
+        screenshot = screenshot_img
+        #load the needle object
+        needle = needle_img
+        print("dimensions: : ", needle.shape)
+        #loop through from 20% to 200% for needle image spaced out evenly 20 times
+        for scale in np.linspace(0.2, 2.0, 20):
+            width = int(needle.shape[1] * scale)
+            height = int(needle.shape[0] * scale)
+            dim = (width, height)
+            resized = cv.resize(needle, dim, interpolation = cv.INTER_AREA)
+            matched = cv.matchTemplate(screenshot, resized, cv.TM_CCOEFF_NORMED)
+            (_, maxVal, _, maxLoc) = cv.minMaxLoc(matched)
+            # store the scale with the max value of matchTemplate
+            if maxVal > mainMax:
+                mainMax = maxVal
+                mainScale = scale
+                # print("maxVal: {} maxLoc: {}".format(maxVal, maxLoc))
+        width = int(needle.shape[1] * mainScale)
+        height = int(needle.shape[0] * mainScale)
+        dim = (width, height)
+        resized = cv.resize(needle, dim, interpolation = cv.INTER_AREA)
+        return resized    
+
+    def get_rect_centers(self, rectangles):
         #x and y center coordinates of rectangles
         points = []
         #drawing box positions
